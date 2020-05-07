@@ -84,4 +84,135 @@ def restart(a):
     restartButton.config(text='RESTART', state='active', relief='raised')
     move()
 
+#konfiguriranje postavki igre(težina igre)
+def options(a):
+    global go
+    go=0
+    def closeWin(a):   #zatvara prozor za postavke igre bez spremanja promjena
+        global go
+        go=1
+        optionsButton.config(state='active', relief='raised')
+        optionWin.destroy()
+    def closeAccept(a):    #zatvara prozor za postavke igre i sprema promjene
+        global difficulty; global go
+        go=1
+        optionsButton.config(state='active', relief='raised')
+        if difficultyINT.get()!=0:
+            difficulty=difficultyINT.get()
+            optionWin.destroy()
+
+    #prikazuje prozor postavki igre i definira dimenzije,boje itd.
+    optionWin=Toplevel(window)
+    optionWin.title('Options')
+    optionWin.geometry('300x250+{}+{}'.format(window.winfo_x()+100, window.winfo_y()+100))
+    optionWin.configure(bg='lightgray')
+    optionsButton.config(state='disabled', relief='sunken')
+    #gumb za spremanje promjena postavki
+    closeAcceptButton=Button(optionWin, text='Apply and Close', font=(None,10,'bold'))
+    closeAcceptButton.bind('<Button>', closeAccept)
+    closeAcceptButton.place(x=130,y=200)
+    #gumb za zatvaranje prozora postavki
+    closeButton=Button(optionWin, text='Close', font=(None,10,'bold'))
+    closeButton.bind('<Button>', closeWin)
+    closeButton.place(x=80,y=200)
+    difficultyINT=IntVar()   #težina igre
+    #label u kojem su prikazane težine igre
+    diffText=Label(optionWin, text='Difficulty', font=(None,17,'bold'), bg='lightgray')
+    diffText.place(x=0,y=0)
+    if difficulty==4:
+        diffText.configure(text='Difficulty: Easy')
+    elif difficulty==3:
+        diffText.configure(text='Difficulty: Normal')
+    elif difficulty==2:
+        diffText.configure(text='Difficulty: Hard')
+    elif difficulty==1:
+        diffText.configure(text='Difficulty: Extreme')
+    #buttoni za odabir težine igre   
+    Radiobutton(optionWin, text='Easy', variable=difficultyINT, value=4, font=(None,12,'bold'), bg='lightgray').place(x=5,y=30)
+    Radiobutton(optionWin, text='Normal', variable=difficultyINT, value=3, font=(None,12,'bold'), bg='lightgray').place(x=5,y=60)
+    Radiobutton(optionWin, text='Hard', variable=difficultyINT, value=2, font=(None,12,'bold'), bg='lightgray').place(x=5,y=90)
+    Radiobutton(optionWin, text='Extreme', variable=difficultyINT, value=1, font=(None,12,'bold'), bg='lightgray').place(x=5,y=120)
+
+#prikazuje sliku hrane u random bojama
+def hrana():
+    tHrana.color(choice(['red','blue','brown','orange','purple']))
+    tHrana.seth(randint(0,360))
+    a=randint(-4,4); b=randint(-4,4)
+    a=a*50; b=b*50
+    if [a,b] in putanja:  #ako se hrana nalazi na istom mjestu kao i zmija,prikazuje se nova slika hrane na random poziciji
+        hrana()
+    else:
+        tHrana.goto(a,b); tHrana.stamp()
+
+#pomicanje zmije 
+def move():
+    go=1
+    while go:
+        turt.st(); turt.stamp()
+        if turt.heading()==0:
+            turt.goto(putanja[-1][0]+50,putanja[-1][1])
+        elif turt.heading()==90:
+            turt.goto(putanja[-1][0],putanja[-1][1]+50)
+        elif turt.heading()==180:
+            turt.goto(putanja[-1][0]-50,putanja[-1][1])
+        elif turt.heading()==270:
+            turt.goto(putanja[-1][0],putanja[-1][1]-50)            
+        putanja.append([roundto(turt.xcor()),roundto(turt.ycor())])
+        #provjerava da li se zmija nalazi na istim koordinatama kao i hrana
+        if putanja[-1][0]==roundto(tHrana.xcor()) and putanja[-1][1]==roundto(tHrana.ycor()):
+            duljina.config(text='{}/81'.format(len(putanja)+1))    #label sa rezultatom
+            if len(putanja)<80:         #ako je duljina zmije manja od 80 prikazuje novu hranu
+                hrana()
+        else:
+            tDel.goto(putanja[0][0],putanja[0][1]); tDel.stamp()
+            putanja.pop(0)
+        turt.stamp()
+        #provjerava da li je zmija unutar mape
+        if putanja[-1] in putanja[0:-1]:
+            win.config(text='GAME OVER', fg='red')
+            return
+        if 250 in putanja[-1] or -250 in putanja[-1]:
+            win.config(text='GAME OVER', fg='red')
+            return
+        #provjera duljine zmije/provjera za pobjedu
+        if len(putanja)==80:
+            win.config(text='YOU WON', fg='green')
+            return
+        sleep(difficulty*0.04)
+        
+window.bind('<Up>',up)
+window.bind('<Right>',right)
+window.bind('<Down>',down)
+window.bind('<Left>',left)
+
+win=Label(text=' ', font=(None,20,'bold'), width=10, bg='lightgray')
+win.place(x=592,y=350)
+
+#label koji prikazuje rezultat(duljinu)
+duljina=Label(text='0/81', font=(None,25,'bold'), width=7)
+duljina.place(x=570,y=50)
+
+#button za restart
+restartButton=Button(text='START', font=(None,15,'bold'), width=15)
+restartButton.bind('<Button>', restart)
+restartButton.place(x=585,y=450)
+window.bind('<Return>', restart)
+
+#options button sa slikom
+optionsPNG=PhotoImage(file='options.png')
+optionsButton=Button(image=optionsPNG)
+optionsButton.bind('<Button>',options)
+optionsButton.place(x=725,y=44)
+
+#label u kojem su prikazane upute za igranje igre
+tip=Label(text='play with the arrow keys start/restart with enter', font=(None,9,'bold'), wraplength=200, bg='lightgray')
+tip.place(x=605,y=500)
+
+#pokretanje igre
+mapa()
+
+window.mainloop()
+
+
+
 
